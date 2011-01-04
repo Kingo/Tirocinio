@@ -19,7 +19,8 @@ module  Scraper
     attr_accessor :referring_uri
 
     def self.create(args)
-      uri = URI.parse(URI.encode(args[:url]))
+      #uri = URI.parse(URI.encode(args[:url]))
+      uri = URI.parse(args[:url])
       # a referrer is a clear enough hint to create an HttpDocument
       return HttpDocument.new(args) if uri && uri.scheme =~ /^https?$/i
     rescue URI::InvalidURIError
