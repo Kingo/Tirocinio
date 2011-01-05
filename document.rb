@@ -19,6 +19,7 @@ module  Scraper
     attr_accessor :referring_uri
 
     def self.create(args)
+      #Problem about url decode
       #uri = URI.parse(URI.encode(args[:url]))
       uri = URI.parse(args[:url])
       # a referrer is a clear enough hint to create an HttpDocument
@@ -32,7 +33,8 @@ module  Scraper
     # referrer: uri of the document we retrieved this link from
     def initialize(args)
       begin
-        @uri = URI.parse(URI.encode(args.delete(:url)))
+        #@uri = URI.parse(URI.encode(args.delete(:url)))
+        @uri = URI.parse(args.delete(:url))
         @source_id = args.delete(:source_id)
         @profile_id = args.delete(:profile_id)
         @referring_source_id = args.delete(:referring_source_id)
@@ -62,7 +64,7 @@ module  Scraper
     end
 
     def is_fetched?
-      has_content? && (title || body)
+      (!title.blank? && !body.blank?)
     end
 
     def has_content?
@@ -108,17 +110,16 @@ module  Scraper
 
     def fetch
       @status = :fail
-      Scraper.logger.info "Start fetching #{@uri.to_s}"
+      Scraper.logger.debug "Check page #{@uri.to_s}"
       #copia gli accessor_attributes direttamente
       @content = Hash.new if @content.nil?
       #potrebbe succedere che in alcuni casi speciali (vedi Youtube) la pagina non abbia bisogno di
       #essere fetchata perchè è già completa. Una pagina è completa se soddisfa i requisti del needs_indexing
       if self.is_fetched? then
-        Scraper.logger.debug "Page doesn't need fetching #{@uri.to_s}"
+        Scraper.logger.info "Page not fetching #{@uri.to_s}"
         @status = :success
+        return @status
       else
-        Scraper.logger.debug "Page need fetching #{@uri.to_s}"
-
         #open document
         Scraper.logger.info "Page fetching #{@uri.to_s}"
         self.open
@@ -168,9 +169,10 @@ module  Scraper
         @content[key]= value
       end unless self.accessor_attributes.nil?
       @content[:title]    = @content[:title].nil? ? nil : @content[:title].decode_entities.strip_all
-      Scraper.logger.info("Getting title #{@content[:title]} for #{@uri.to_s}")
+      Scraper.logger.debug("Getting title #{@content[:title]} for #{@uri.to_s}")
       @content[:content]  = @content[:content].nil? ? nil : @content[:content].decode_entities.strip_all
-      result = !(@content[:content].blank? || @content[:title].blank?) #non content.blank e non title.blank
+      Scraper.logger.debug("Getting content #{@content[:title]} for #{@uri.to_s}")
+      return is_fetched? #non content.blank e non title.blank
     end
 
     def extract(config)
